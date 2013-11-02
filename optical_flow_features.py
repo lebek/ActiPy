@@ -5,8 +5,8 @@ class OpticalFlowFeatures:
   Extracts features from an optical flow.
   """
 
-  def __init__(self, flow):
-    self.flow = flow
+  def __init__(self, flow_vectors):
+    self.flow_vectors = flow_vectors
 
   def hoof(self, bins):
     """ 
@@ -17,7 +17,7 @@ class OpticalFlowFeatures:
     invariance.
     """
 
-    x,y = np.squeeze(np.split(self.flow, 2, 2))
+    x,y = np.squeeze(np.split(self.flow_vectors, 2, 2))
     orientations = np.arctan2(x, y)
     magnitudes = np.sqrt(np.square(x) + np.square(y))
     hist, bin_edges = np.histogram(orientations,
