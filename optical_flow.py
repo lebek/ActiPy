@@ -2,8 +2,10 @@ import cv
 import cv2
 import numpy as np
 
-
 class OpticalFlow:
+  """
+  Given a video file extracts the optical flow.
+  """
 
   def _gray_copy(self, im):
     if self._isCV2(im):
