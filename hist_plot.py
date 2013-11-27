@@ -2,8 +2,8 @@ import numpy as np
 from bokeh.plotting import *
 from bokeh.objects import Range1d
 from bokeh.glyphs import ImageRGBA
-from optical_flow import OpticalFlow
-from optical_flow_features import OpticalFlowFeatures
+from video_features import VideoFeatures
+from plan import good_cells, vid_dims
 import hashlib
 from sys import argv
 
@@ -11,56 +11,16 @@ path = argv[1]
 stop_after = int(argv[2])
 feature_path = "features_%s_%d.npy" % (hashlib.md5(path).hexdigest(), stop_after)
 
-def factors(n):    
-  return set(reduce(list.__add__, 
-    ([i, n//i] for i in range(1, int(n**0.5) + 1) if n % i == 0)))
-
-def closest_factor(p, q):
-  factors_of_q = factors(q)
-  return min(factors_of_q, key=lambda x:abs(x-p))
-
-def good_cells(width, height, x_guess, y_guess):
-    return (closest_factor(x_guess, width), closest_factor(y_guess, height))
-
-def calc_features(path, x_guess, y_guess, stop_after=None):
-    hists = []
-    magnitudes = []
-    good_features = []
-
-    x_cells = None
-    y_cells = None
-    for pos, flow in enumerate(OpticalFlow(path).farneback()):
-        if stop_after and pos > stop_after:
-            break
-
-        off = OpticalFlowFeatures(flow)
-        if x_cells is None:
-            height, width, _ = flow.vectors.shape
-            x_cells, y_cells = good_cells(width, height, x_guess, y_guess)
-        hist, bin_edges = off.cell_hoof(8, x_cells, y_cells, True)
-        hists.append(hist)
-
-        magnitudes.append(off.magnitude(x_cells, y_cells))
-        good_features.append(off.good_features())
-
-    dims = flow.get_dims()
-
-    hists = np.swapaxes(np.swapaxes(hists, 0, 1), 1, 2)
-    magnitudes = np.swapaxes(np.swapaxes(magnitudes, 0, 1), 1, 2)
-    return (x_cells, y_cells), dims, hists, bin_edges, magnitudes, good_features
-
-x_guess = 20
-y_guess = 15
+vid_width, vid_height = vid_dims(path)
+x_cells, y_cells = good_cells(path, 20, 15)
+print "Using a cell grid of: %dx%d" % (x_cells, y_cells)
 
 try:
-    cells,dims,hists,bin_edges,magnitudes,good_features = np.load(feature_path)
+    hists,bin_edges,magnitudes,good_features = np.load(feature_path)
 except:
-    cells,dims,hists,bin_edges,magnitudes,good_features = calc_features(path, x_guess, y_guess, stop_after)
-    np.save(feature_path, [cells,dims,hists,bin_edges,magnitudes,good_features])
+    hists,bin_edges,magnitudes,good_features = VideoFeatures(path).calc_features(x_cells, y_cells, stop_after)
+    np.save(feature_path, [hists,bin_edges,magnitudes,good_features])
 
-
-x_cells, y_cells = cells
-print "Using a cell grid of: %dx%d" % cells
 avgs = np.nanmean(hists, 2)
 avg_magnitudes = np.nanmean(magnitudes, 2)
 avg_magnitudes = (avg_magnitudes-np.nanmin(avg_magnitudes))/(np.nanmax(avg_magnitudes)-np.nanmin(avg_magnitudes))
@@ -83,7 +43,6 @@ angles = np.roll(bin_edges[:-1], bins/4)
 
 max_sum = np.max(np.sum(avgs, 2))
 
-vid_width, vid_height = dims
 vis_width = 1200
 vis_height = int(vid_height*(float(vis_width)/vid_width))
 
