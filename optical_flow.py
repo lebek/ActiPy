@@ -33,11 +33,20 @@ class Flow:
     vis = cv_compat.color_copy(im)
     for (x1,y1),(x2,y2) in lines:
       cv_compat.line(vis,(x1,y1),(x2,y2),(0,255,0), 1, cv.CV_AA)
-      cv_compat.circle(vis,(x1,y1),1,(0,255,0), -1, cv.CV_AA)
+      cv_compat.circle(vis,(x1,y1),1,(0,255,0), 1, cv.CV_AA)
     return vis
 
+  # I don't belong here
+  def draw_good_features(self, vis):
+    corners = cv2.goodFeaturesToTrack(self.curr_frame, 5, 0.4, 0)
+    for corner in corners:
+      x, y = [int(i) for i in corner[0]]
+      cv_compat.circle(vis,(x,y),1,(0,0,255), 3, cv.CV_AA)
+
   def show(self):
-    cv_compat.show("Optical Flow", self.draw_flow(self.curr_frame, self.vectors))
+    vis = self.draw_flow(self.curr_frame, self.vectors)
+    self.draw_good_features(vis)
+    cv_compat.show("Optical Flow", vis)
     if cv.WaitKey(10) == 27:
       return
 
