@@ -16,20 +16,10 @@ x_cells, y_cells = good_cells(path, 20, 15)
 print "Using a cell grid of: %dx%d" % (x_cells, y_cells)
 
 try:
-    hists,bin_edges,magnitudes,good_features = np.load(feature_path)
+    avg_hists, bin_edges, avg_magnitudes, variances = np.load(feature_path)
 except:
-    hists,bin_edges,magnitudes,good_features = VideoFeatures(path).calc_features(x_cells, y_cells, stop_after)
-    np.save(feature_path, [hists,bin_edges,magnitudes,good_features])
-
-avgs = np.nanmean(hists, 2)
-avg_magnitudes = np.nanmean(magnitudes, 2)
-avg_magnitudes = (avg_magnitudes-np.nanmin(avg_magnitudes))/(np.nanmax(avg_magnitudes)-np.nanmin(avg_magnitudes))
-#good_features = np.vstack(good_features)
-
-#variances = np.var(magnitudes, 2)
-variances = np.sum(np.nanvar(hists, 2), 2) # Sum of the variances over time in each bin in each cell
-#variances = np.nanvar(hists, 2)
-variances = (variances-np.nanmin(variances))/(np.nanmax(variances)-np.nanmin(variances))
+    avg_hists, bin_edges, avg_magnitudes, variances = VideoFeatures(path).calc_window_features(x_cells, y_cells, stop_after)
+    np.save(feature_path, [avg_hists, bin_edges, avg_magnitudes, variances])
 
 def make_color(x, y):
     # RGB
@@ -40,8 +30,6 @@ bins = len(bin_edges)-1
 angle = 2.0 * np.pi / bins
 #angles = np.arange(bins)*angle
 angles = np.roll(bin_edges[:-1], bins/4)
-
-max_sum = np.max(np.sum(avgs, 2))
 
 vis_width = 1200
 vis_height = int(vid_height*(float(vis_width)/vid_width))
@@ -71,7 +59,7 @@ for x in np.arange(0,x_cells):
         #annular_wedge(np.ones(bins)*x, np.ones(bins)*y, 0., np.random.rand(bins)*0.3, angles, angles+angle)
         #magnitudes = np.random.rand(bins)*0.25
         #import pdb; pdb.set_trace()
-        magnitudes = avgs[y_cells-y-1,x]*16
+        magnitudes = avg_hists[y_cells-y-1,x]*16
         x_start = np.ones(bins)*vid_space_x[x]
         y_start = np.ones(bins)*vid_space_y[y]
         x_ends = x_start+(magnitudes*np.sin(-angles+(1.5*angle)))
