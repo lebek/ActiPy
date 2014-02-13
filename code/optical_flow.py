@@ -3,6 +3,21 @@ import cv2
 import numpy as np
 import cv_compat
 
+from scipy.stats import tmean, scoreatpercentile
+def trimmean(arr, keep_percent):
+  trim_percent = (100-keep_percent)/2
+  lower_limit = scoreatpercentile(arr, trim_percent)
+  upper_limit = scoreatpercentile(arr, 100-trim_percent)
+  return tmean(arr, limits=(lower_limit, upper_limit), inclusive=(True, True))
+
+def make_color(x):
+  brightness = np.floor(x*250)
+  return (brightness, brightness, brightness)
+
+def normalize(x):
+  x = x - x.min()
+  x = x/x.max()
+  return x
 
 class Flow:
   """
@@ -16,6 +31,8 @@ class Flow:
 
   @staticmethod
   def draw_flow(im, flow, step=16):
+    mult = 4
+
     if cv_compat.is_cv2(im):
       h,w = im.shape[:2]
     else:
@@ -25,15 +42,39 @@ class Flow:
     y,x = np.mgrid[step/2:h:step,step/2:w:step].reshape(2,-1)
     fx,fy = flow[y,x].T
 
+    #meanx,meany = np.mean(flow, (0,1))
+    #colorx = normalize(fx-meanx)
+    #colory = normalize(fx-meany)
+
+    #import pdb; pdb.set_trace()
+    #flow_theta = np.arctan2(fx,fy) + np.pi
+    #mean_theta = np.arctan2(*np.mean(flow, (0,1))) + np.pi
+    #mean_theta = np.arctan2(trimmean(flow[:,:,0], 80), trimmean(flow[:,:,1], 80)) + np.pi
+    #locality = normalize(np.abs((flow_theta - mean_theta) % np.pi*2))
+
+    #local = (locality > 0.1) * 1
+
+    #magnitudes = normalize(np.sqrt(np.square(fx) + np.square(fy)))
+
+    #head_x,head_y = np.arctan(-np.mean(flow, (0,1)))/2.77
+    # import pdb; pdb.set_trace()
+
     # create line endpoints
-    lines = np.vstack([x,y,x+(fx*4),y+(fy*4)]).T.reshape(-1,2,2)
+    lines = np.vstack([x,y,x+(fx*mult),y+(fy*mult)]).T.reshape(-1,2,2)
     lines = np.int32(lines)
 
     # create image and draw
     vis = cv_compat.color_copy(im)
-    for (x1,y1),(x2,y2) in lines:
-      cv_compat.line(vis,(x1,y1),(x2,y2),(0,255,0), 1, cv.CV_AA)
-      cv_compat.circle(vis,(x1,y1),1,(0,255,0), 1, cv.CV_AA)
+    for pos,((x1,y1),(x2,y2)) in enumerate(lines):
+      # white = strong locality/variation from mean
+      #c = make_color(local.flatten()[pos])
+      #cv_compat.line(vis,(x1,y1),(int(x1+np.mean(flow[:,:,0])*mult),int(y1+np.mean(flow[:,:,1])*mult)), (0,255,0), 1, cv.CV_AA)
+      cv_compat.line(vis,(x1,y1),(x2,y2), (0,255,0), 1, cv.CV_AA)
+      cv_compat.circle(vis,(x1,y1),1, (0,255,0), 1, cv.CV_AA)
+
+    #cv_compat.line(vis,(100,100),(int(100+head_x*100),100),(255,0,0), 1, cv.CV_AA)
+    #cv_compat.line(vis,(100,100),(100,int(100+head_y*100)),(255,0,0), 1, cv.CV_AA)
+
     return vis
 
   # I don't belong here
@@ -45,7 +86,7 @@ class Flow:
 
   def show(self):
     vis = self.draw_flow(self.curr_frame, self.vectors)
-    self.draw_good_features(vis)
+    #self.draw_good_features(vis)
     cv_compat.show("Optical Flow", vis)
     if cv.WaitKey(10) == 27:
       return
@@ -59,9 +100,10 @@ class OpticalFlow:
     self.path = path
 
   def _iter_frames(self, vid):
+    vid_length = cv_compat.get_vid_length(vid)
     prev_frame = cv_compat.get_gray_frame(vid)
     curr_frame = cv_compat.get_gray_frame(vid)
-    while curr_frame is not None:
+    for i in xrange(vid_length-2):
       yield (prev_frame, curr_frame)
       prev_frame = curr_frame
       curr_frame = cv_compat.get_gray_frame(vid)
@@ -98,7 +140,7 @@ class OpticalFlow:
     for prev_frame, curr_frame in self._iter_frames(vid):
       flow = cv2.calcOpticalFlowFarneback(prev_frame, curr_frame, 
                                           pyr_scale=0.5, levels=3, 
-                                          winsize=15, iterations=10, 
+                                          winsize=20, iterations=1, 
                                           poly_n=7, poly_sigma=1.5, flags=0)
       yield Flow(flow, curr_frame, prev_frame)
 

@@ -30,14 +30,23 @@ def circle(im, *args, **kwargs):
   else:
     return cv.Circle(im, *args, **kwargs)
   
-def is_cv2(im):
-  return isinstance(im, np.ndarray)
+def is_cv2(o):
+  return (isinstance(o, np.ndarray) or type(o).__name__ == 'VideoCapture')
 
 def get_frame(vid):
   try:
     return vid.read()[1]
   except AttributeError:
     return cv.QueryFrame(vid)
+
+def get_vid_length(vid):
+  if is_cv2(vid):
+    return int(vid.get(cv.CV_CAP_PROP_FRAME_COUNT))
+  else:
+    return int(cv.GetCaptureProperty(stream, cv.CV_CAP_PROP_FRAME_COUNT))
+
+def open_vid(path):
+  return cv2.VideoCapture(path)
 
 def get_gray_frame(vid):
   frame = get_frame(vid)

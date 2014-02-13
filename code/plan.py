@@ -15,10 +15,14 @@ def fit_cells(width, height, x_guess, y_guess):
   return (closest_factor(x_guess, width), closest_factor(y_guess, height))
 
 def vid_dims(path):
-  vid = cv2.VideoCapture(path)
+  vid = cv_compat.open_vid(path)
   im = cv_compat.get_gray_frame(vid)
   h,w = im.shape[:2]
   return w, h
+
+def vid_length(path):
+  vid = cv_compat.open_vid(path)
+  return cv_compat.get_vid_length(vid)
 
 def good_cells(path, x_guess, y_guess):
   width, height = vid_dims(path)

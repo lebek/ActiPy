@@ -10,6 +10,7 @@ from sys import argv
 path = argv[1]
 stop_after = int(argv[2])
 feature_path = "features_%s_%d.npy" % (hashlib.md5(path).hexdigest(), stop_after)
+output_path = "%s_hist.html" % (path.replace("/", "_"),)
 
 vid_width, vid_height = vid_dims(path)
 x_cells, y_cells = good_cells(path, 20, 15)
@@ -39,7 +40,7 @@ padding = 20
 vid_space_x = np.linspace(0, vid_width, x_cells)
 vid_space_y = np.linspace(0, vid_height, y_cells)
 
-output_file("hist_plot.html", title="HOOF plots")
+output_file(output_path, title="HOOF plots")
 
 hold()
 
