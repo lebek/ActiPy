@@ -3,22 +3,6 @@ import cv2
 import numpy as np
 import actpy.cv_compat as cv_compat
 
-from scipy.stats import tmean, scoreatpercentile
-def trimmean(arr, keep_percent):
-  trim_percent = (100-keep_percent)/2
-  lower_limit = scoreatpercentile(arr, trim_percent)
-  upper_limit = scoreatpercentile(arr, 100-trim_percent)
-  return tmean(arr, limits=(lower_limit, upper_limit), inclusive=(True, True))
-
-def make_color(x):
-  brightness = np.floor(x*250)
-  return (brightness, brightness, brightness)
-
-def normalize(x):
-  x = x - x.min()
-  x = x/x.max()
-  return x
-
 class Flow:
   """
   Represents the optical flow between two frames.
@@ -38,36 +22,13 @@ class Flow:
     y,x = np.mgrid[step/2:h:step,step/2:w:step].reshape(2,-1)
     fx,fy = flow[y,x].T
 
-    #meanx,meany = np.mean(flow, (0,1))
-    #colorx = normalize(fx-meanx)
-    #colory = normalize(fx-meany)
-
-    #import pdb; pdb.set_trace()
-    #flow_theta = np.arctan2(fx,fy) + np.pi
-    #mean_theta = np.arctan2(*np.mean(flow, (0,1))) + np.pi
-    #mean_theta = np.arctan2(trimmean(flow[:,:,0], 80), trimmean(flow[:,:,1], 80)) + np.pi
-    #locality = normalize(np.abs((flow_theta - mean_theta) % np.pi*2))
-
-    #local = (locality > 0.1) * 1
-
-    #magnitudes = normalize(np.sqrt(np.square(fx) + np.square(fy)))
-
-    #head_x,head_y = np.arctan(-np.mean(flow, (0,1)))/2.77
-    # import pdb; pdb.set_trace()
-
     # create line endpoints
     lines = np.vstack([x,y,x+(fx*mult),y+(fy*mult)]).T.reshape(-1,2,2)
     lines = np.int32(lines)
 
     for pos,((x1,y1),(x2,y2)) in enumerate(lines):
-      # white = strong locality/variation from mean
-      #c = make_color(local.flatten()[pos])
-      #cv_compat.line(vis,(x1,y1),(int(x1+np.mean(flow[:,:,0])*mult),int(y1+np.mean(flow[:,:,1])*mult)), (0,255,0), 1, cv.CV_AA)
       cv_compat.line(vis,(x1,y1),(x2,y2), (255,255,0), 1, cv.CV_AA)
       cv_compat.circle(vis,(x1,y1),1, (255,255,0), 1, cv.CV_AA)
-
-    #cv_compat.line(vis,(100,100),(int(100+head_x*100),100),(255,0,0), 1, cv.CV_AA)
-    #cv_compat.line(vis,(100,100),(100,int(100+head_y*100)),(255,0,0), 1, cv.CV_AA)
 
     return vis
 
