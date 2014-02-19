@@ -36,25 +36,36 @@ class OpticalFlowFeatures:
 
     return hist, bin_edges
 
+
+  def iterate_cells(self, x_cells, y_cells):
+    fvs = self.flow.vectors
+
+    y_len, x_len, _ = fvs.shape
+    x_cl = x_len/x_cells
+    y_cl = y_len/y_cells
+
+    for i in xrange(x_cells):
+      for j in xrange(y_cells):
+        x_base = i*x_cl
+        y_base = j*y_cl
+        x_components = fvs[y_base:y_base+y_cl, x_base:x_base+x_cl, 0]
+        y_components = fvs[y_base:y_base+y_cl, x_base:x_base+x_cl, 1]
+        yield x_components, y_components, i, j
+
   def cell_hoof(self, bins, x_cells, y_cells, density=False):
     """
     Calculate HooF across grid cell defined by x_cells and y_cells.
     """
-    
-    fvs = self.flow.vectors
-    cells = np.vstack([np.split(i, x_cells, axis=1) for i in np.split(fvs, y_cells, axis=0)])
-
-    cells_x = cells[:,:,:,0]
-    cells_y = cells[:,:,:,1]
 
     hists = []
     edges = []
-    for i in xrange(len(cells)):
-      h, e = self._hoof(cells_x[i], cells_y[i], bins, density)
-      hists.append(h)
-      edges = e
 
-    hists = np.array(hists).reshape(y_cells, x_cells, bins)
+    for x, y, _, _ in self.iterate_cells(x_cells, y_cells):
+        h, e = self._hoof(x, y, bins, density)
+        hists.append(h)
+        edges = e
+
+    hists = np.array(hists).reshape(x_cells, y_cells, bins)
     return hists, edges
 
   def good_features(self):
@@ -70,8 +81,8 @@ class OpticalFlowFeatures:
     Calculate flow magnitude across grid cell defined by x_cells and y_cells.
     """
 
-    x = self.flow.vectors[:,:,0]
-    y = self.flow.vectors[:,:,1]
-    magnitudes = np.sqrt(np.square(x) + np.square(y))
-    cell_magnitudes = np.vstack([np.split(i, x_cells, axis=1) for i in np.split(magnitudes, y_cells, axis=0)])
-    return np.nanmean(np.nanmean(cell_magnitudes, 2), 1).reshape(y_cells, x_cells)
+    cell_magnitudes = np.zeros((x_cells, y_cells))
+    for x, y, xi, yi in self.iterate_cells(x_cells, y_cells):
+      cell_magnitudes[xi,yi] = np.nanmean(np.sqrt(np.square(x) + np.square(y)))
+
+    return cell_magnitudes

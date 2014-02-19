@@ -7,20 +7,16 @@ from plan import good_cells, vid_dims
 import hashlib
 from sys import argv
 
+import matplotlib.pyplot as plt
+
 path = argv[1]
-stop_after = int(argv[2])
-feature_path = "features_%s_%d.npy" % (hashlib.md5(path).hexdigest(), stop_after)
-output_path = "%s_hist.html" % (path.replace("/", "_"),)
+output_path = argv[2]
 
 vid_width, vid_height = vid_dims(path)
-x_cells, y_cells = good_cells(path, 20, 15)
+x_cells, y_cells = good_cells(path, 15, 15)
 print "Using a cell grid of: %dx%d" % (x_cells, y_cells)
 
-try:
-    avg_hists, bin_edges, avg_magnitudes, variances = np.load(feature_path)
-except:
-    avg_hists, bin_edges, avg_magnitudes, variances = VideoFeatures(path).calc_window_features(x_cells, y_cells, stop_after)
-    np.save(feature_path, [avg_hists, bin_edges, avg_magnitudes, variances])
+avg_hists, bin_edges, avg_magnitudes, variances, flow = VideoFeatures(path).calc_window_features(x_cells, y_cells)
 
 def make_color(x, y):
     # RGB
@@ -55,12 +51,16 @@ plot.y_range = Range1d(start=-padding, end=vid_height+padding)
 #     loc = float(pos)/len(good_features)
 #     scatter(gfs.T[0], vid_height-gfs.T[1], radius=10, fill_color=None, line_color=make_color(loc, 0), alpha=0.05)
 
+#avg_hists = np.swapaxes(avg_hists, 0, 1)
+#avg_magnitudes = np.swapaxes(avg_magnitudes, 0, 1)
+#variances = np.swapaxes(variances, 0, 1)
+
 for x in np.arange(0,x_cells):
     for y in np.arange(0,y_cells):
         #annular_wedge(np.ones(bins)*x, np.ones(bins)*y, 0., np.random.rand(bins)*0.3, angles, angles+angle)
         #magnitudes = np.random.rand(bins)*0.25
         #import pdb; pdb.set_trace()
-        magnitudes = avg_hists[y_cells-y-1,x]*16
+        magnitudes = avg_hists[x,y_cells-y-1]*16
         x_start = np.ones(bins)*vid_space_x[x]
         y_start = np.ones(bins)*vid_space_y[y]
         x_ends = x_start+(magnitudes*np.sin(-angles+(1.5*angle)))
@@ -69,7 +69,8 @@ for x in np.arange(0,x_cells):
         #for i in range(bins):
         #  line([x_start[i], x_ends[i]], [y_start[i], y_ends[i]])
         #arc(x_start, y_start, magnitudes, angles, angles+angle)
-        line_colors = make_color(avg_magnitudes[y_cells-y-1,x], variances[y_cells-y-1,x])
+        line_colors = make_color(avg_magnitudes[x,y_cells-y-1], variances[x,y_cells-y-1])
+        #line_colors = make_color(avg_magnitudes[x,y_cells-y-1], 0.5)
         annular_wedge(x_start, y_start, 0., magnitudes, angles, angles+angle, 
             fill_color=None, line_color=line_colors)
 

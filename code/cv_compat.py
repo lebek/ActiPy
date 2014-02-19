@@ -29,6 +29,22 @@ def circle(im, *args, **kwargs):
     return cv2.circle(im, *args, **kwargs)
   else:
     return cv.Circle(im, *args, **kwargs)
+
+def putText(im, *args, **kwargs):
+  if is_cv2(im):
+    return cv2.putText(im, *args, **kwargs)
+  else:
+    # this doesn't work
+    return cv.PutText(im, *args, **kwargs)
+
+def get_dims(im):
+  if is_cv2(im):
+    h,w = im.shape[:2]
+  else:
+    h = im.height
+    w = im.width
+
+  return w, h
   
 def is_cv2(o):
   return (isinstance(o, np.ndarray) or type(o).__name__ == 'VideoCapture')
@@ -43,7 +59,7 @@ def get_vid_length(vid):
   if is_cv2(vid):
     return int(vid.get(cv.CV_CAP_PROP_FRAME_COUNT))
   else:
-    return int(cv.GetCaptureProperty(stream, cv.CV_CAP_PROP_FRAME_COUNT))
+    return int(cv.GetCaptureProperty(vid, cv.CV_CAP_PROP_FRAME_COUNT))
 
 def open_vid(path):
   return cv2.VideoCapture(path)

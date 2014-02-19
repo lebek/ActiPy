@@ -30,14 +30,10 @@ class Flow:
     self.prev_frame = prev_frame
 
   @staticmethod
-  def draw_flow(im, flow, step=16):
+  def draw_flow(vis, im, flow, step=16):
     mult = 4
 
-    if cv_compat.is_cv2(im):
-      h,w = im.shape[:2]
-    else:
-      h = im.height
-      w = im.width
+    w, h = cv_compat.get_dims(im)
       
     y,x = np.mgrid[step/2:h:step,step/2:w:step].reshape(2,-1)
     fx,fy = flow[y,x].T
@@ -63,14 +59,12 @@ class Flow:
     lines = np.vstack([x,y,x+(fx*mult),y+(fy*mult)]).T.reshape(-1,2,2)
     lines = np.int32(lines)
 
-    # create image and draw
-    vis = cv_compat.color_copy(im)
     for pos,((x1,y1),(x2,y2)) in enumerate(lines):
       # white = strong locality/variation from mean
       #c = make_color(local.flatten()[pos])
       #cv_compat.line(vis,(x1,y1),(int(x1+np.mean(flow[:,:,0])*mult),int(y1+np.mean(flow[:,:,1])*mult)), (0,255,0), 1, cv.CV_AA)
-      cv_compat.line(vis,(x1,y1),(x2,y2), (0,255,0), 1, cv.CV_AA)
-      cv_compat.circle(vis,(x1,y1),1, (0,255,0), 1, cv.CV_AA)
+      cv_compat.line(vis,(x1,y1),(x2,y2), (255,255,0), 1, cv.CV_AA)
+      cv_compat.circle(vis,(x1,y1),1, (255,255,0), 1, cv.CV_AA)
 
     #cv_compat.line(vis,(100,100),(int(100+head_x*100),100),(255,0,0), 1, cv.CV_AA)
     #cv_compat.line(vis,(100,100),(100,int(100+head_y*100)),(255,0,0), 1, cv.CV_AA)
@@ -84,12 +78,22 @@ class Flow:
       x, y = [int(i) for i in corner[0]]
       cv_compat.circle(vis,(x,y),1,(0,0,255), 3, cv.CV_AA)
 
-  def show(self):
-    vis = self.draw_flow(self.curr_frame, self.vectors)
-    #self.draw_good_features(vis)
-    cv_compat.show("Optical Flow", vis)
-    if cv.WaitKey(10) == 27:
-      return
+  def show(self, flow=True, good_features=False, text=None, display=True):
+    vis = cv_compat.color_copy(self.curr_frame)
+    if flow:
+      self.draw_flow(vis, self.curr_frame, self.vectors)
+    if good_features:
+      self.draw_good_features(vis)
+    if text:
+      w, h = cv_compat.get_dims(vis)
+      cv_compat.putText(vis, text, (10,h-10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255))
+
+    if display:
+      cv_compat.show("Optical Flow", vis)
+      if cv.WaitKey(10) == 27:
+        return
+
+    return vis
 
 class OpticalFlow:
   """
@@ -136,12 +140,13 @@ class OpticalFlow:
 
   def farneback(self):
     vid = cv2.VideoCapture(self.path)
-
-    for prev_frame, curr_frame in self._iter_frames(vid):
+    flags = cv2.OPTFLOW_FARNEBACK_GAUSSIAN & cv2.OPTFLOW_USE_INITIAL_FLOW
+    for pos, (prev_frame, curr_frame) in enumerate(self._iter_frames(vid)):
       flow = cv2.calcOpticalFlowFarneback(prev_frame, curr_frame, 
                                           pyr_scale=0.5, levels=3, 
-                                          winsize=20, iterations=1, 
-                                          poly_n=7, poly_sigma=1.5, flags=0)
+                                          winsize=10, iterations=1, 
+                                          poly_n=5, poly_sigma=1.1, 
+                                          flags=flags)
       yield Flow(flow, curr_frame, prev_frame)
 
 
@@ -151,4 +156,4 @@ if __name__ == "__main__":
   path = argv[1]
   flow_func = argv[2]
   for flow in getattr(OpticalFlow(path), flow_func)():
-    flow.show()
+    flow.show(good_features=True)
