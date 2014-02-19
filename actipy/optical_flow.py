@@ -105,8 +105,8 @@ class OpticalFlow:
     for pos, (prev_frame, curr_frame) in enumerate(self._iter_frames(vid)):
       flow = cv2.calcOpticalFlowFarneback(prev_frame, curr_frame, 
                                           pyr_scale=0.5, levels=3, 
-                                          winsize=10, iterations=1, 
-                                          poly_n=5, poly_sigma=1.1, 
+                                          winsize=20, iterations=5, 
+                                          poly_n=7, poly_sigma=1.5, 
                                           flags=flags)
       yield Flow(flow, curr_frame, prev_frame)
 
@@ -117,4 +117,4 @@ if __name__ == "__main__":
   path = argv[1]
   flow_func = argv[2]
   for flow in getattr(OpticalFlow(path), flow_func)():
-    flow.show(good_features=True)
+    flow.show(flow=False, good_features=False, text="Running")
