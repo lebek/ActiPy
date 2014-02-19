@@ -1,8 +1,8 @@
-from optical_flow import OpticalFlow 
-from optical_flow_features import OpticalFlowFeatures
+from actpy.optical_flow import OpticalFlow 
+from actpy.optical_flow_features import OpticalFlowFeatures
 import numpy as np
-import plan
-from progress_bar import ProgressBar
+import actpy.plan as plan
+from actpy.progress_bar import ProgressBar
 
 import hashlib
 

@@ -1,7 +1,7 @@
 import cv
 import cv2
 import numpy as np
-import cv_compat
+import actpy.cv_compat as cv_compat
 
 from scipy.stats import tmean, scoreatpercentile
 def trimmean(arr, keep_percent):

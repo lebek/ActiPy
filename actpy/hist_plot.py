@@ -2,8 +2,8 @@ import numpy as np
 from bokeh.plotting import *
 from bokeh.objects import Range1d
 from bokeh.glyphs import ImageRGBA
-from video_features import VideoFeatures
-from plan import good_cells, vid_dims
+from actpy.video_features import VideoFeatures
+from actpy.plan import good_cells, vid_dims
 import hashlib
 from sys import argv
 

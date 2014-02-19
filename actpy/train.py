@@ -8,8 +8,8 @@ import numpy as np
 from sklearn.decomposition import PCA, FastICA, NMF
 from bokeh.plotting import *
 
-from video_features import VideoFeatures
-from plan import good_cells
+from actpy.video_features import VideoFeatures
+from actpy.plan import good_cells
 
 path = argv[1]
 output = argv[2]
