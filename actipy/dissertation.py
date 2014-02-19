@@ -4,8 +4,8 @@ import cv2
 from sklearn import svm
 from sklearn.decomposition import PCA
 
-from actpy.video_features import VideoFeatures
-from actpy.plan import good_cells, vid_dims
+from actipy.video_features import VideoFeatures
+from actipy.plan import good_cells, vid_dims
 
 class DissertationPredictor:
 

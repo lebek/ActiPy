@@ -1,7 +1,7 @@
 import cv
 import cv2
 import numpy as np
-import actpy.cv_compat as cv_compat
+import actipy.cv_compat as cv_compat
 
 class Flow:
   """
