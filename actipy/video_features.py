@@ -11,8 +11,9 @@ class VideoFeatures:
   Given a video file extracts features.
   """
 
-  def __init__(self, path):
+  def __init__(self, path, persist=False):
     self.path = path
+    self.persist = persist
 
     # video length minus one because the first 
     # frame doesn't have an optical flow
@@ -31,9 +32,12 @@ class VideoFeatures:
     Extracts HooF and flow magnitude from every frame of a video.
     """
 
-    try:
-      generator = (i for i in self.loadFlows())
-    except:
+    if self.persist:
+      try:
+        generator = (i for i in self.loadFlows())
+      except:
+        generator = OpticalFlow(self.path).farneback()
+    else:
       generator = OpticalFlow(self.path).farneback()
 
     flows = []
@@ -53,7 +57,8 @@ class VideoFeatures:
 
     print
 
-    self.saveFlows(flows)
+    if self.persist:
+      self.saveFlows(flows)
 
 
   def aggregate_features(self, x_cells, y_cells, window_size=None):
