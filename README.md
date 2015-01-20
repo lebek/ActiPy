@@ -2,7 +2,7 @@
 
 ActiPy is a lab for developing and testing action recognition systems.
 
-![ActiPy](https://raw2.github.com/lebek/ActiPy/master/actipy.png)
+![ActiPy](https://raw.githubusercontent.com/lebek/ActiPy/master/actipy.png)
 
 **actipy.optical_flow.OpticalFlow**
 wraps optical flow algorithms provided by OpenCV 1 & 2 under a common API so they can be swapped in and out easily for evaluation.
